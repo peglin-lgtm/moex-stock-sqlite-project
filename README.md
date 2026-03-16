@@ -1,0 +1,1 @@
+# moex-stock-sqlite-project
