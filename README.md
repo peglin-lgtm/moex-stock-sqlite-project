@@ -1,48 +1,48 @@
 # MOEX Stock SQLite Project
 
-Небольшой ETL/BI-проект для загрузки дневных баров MOEX в SQLite, подготовки витрин и анализа в SQL и Power BI.
+Small ETL/BI project for loading MOEX daily bars into SQLite, preparing analytical marts, and analyzing the data in SQL and Power BI.
 
-## Цель проекта
+## Project Goal
 
-Цель проекта - собрать понятный локальный пайплайн для акций MOEX, который:
+The goal of the project is to build a clear local pipeline for MOEX stocks that:
 
-- загружает рыночные данные в SQLite
-- приводит их к нормальной аналитической структуре
-- считает основные рыночные метрики
-- даёт готовую базу для SQL-анализа и Power BI
+- loads market data into SQLite
+- transforms it into a clean analytical structure
+- calculates core market metrics
+- provides a ready-to-use database for SQL analysis and Power BI
 
-## Что делает проект
+## What the Project Does
 
-В проекте три слоя данных:
+The project has three data layers:
 
-- `raw_bars_daily` - сырые дневные OHLCV-данные
-- `stg_instruments`, `stg_bars_daily` - staging-слой
-- `mart_market_data`, `mart_market_metrics` - аналитические витрины
+- `raw_bars_daily` - raw daily OHLCV data
+- `stg_instruments`, `stg_bars_daily` - staging layer
+- `mart_market_data`, `mart_market_metrics` - analytical marts
 
-Источник данных - MOEX API. Загрузка выполняется скриптом [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py).
+The data source is the MOEX API. Data loading is handled by [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py).
 
-## Структура проекта
+## Project Structure
 
-- [`schema.sql`](schema.sql) - создание таблиц и индексов
-- [`drop_all.sql`](drop_all.sql) - удаление всех таблиц
-- [`raw.sql`](raw.sql) - проверки raw-слоя
-- [`staging.sql`](staging.sql) - загрузка staging-слоя и проверки данных
-- [`mart.sql`](mart.sql) - построение витрин и расчёт метрик
-- [`analysis.sql`](analysis.sql) - примеры аналитических SQL-запросов
-- [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py) - загрузка данных из MOEX в raw-слой
-- [`run_all.ps1`](run_all.ps1) - полный запуск пайплайна одной командой
-- [`BI_stock.pbix`](BI_stock.pbix) - Power BI-дашборд
-- `moex_stock.db` - SQLite-база проекта
+- [`schema.sql`](schema.sql) - creates tables and indexes
+- [`drop_all.sql`](drop_all.sql) - drops all tables
+- [`raw.sql`](raw.sql) - raw-layer checks
+- [`staging.sql`](staging.sql) - loads the staging layer and validates data
+- [`mart.sql`](mart.sql) - builds marts and calculates metrics
+- [`analysis.sql`](analysis.sql) - sample analytical SQL queries
+- [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py) - loads MOEX data into the raw layer
+- [`run_all.ps1`](run_all.ps1) - runs the full pipeline with one command
+- [`BI_stock.pbix`](BI_stock.pbix) - Power BI dashboard
+- `moex_stock.db` - project SQLite database
 
-## Архитектура данных
+## Data Architecture
 
-Проект построен по обычной схеме `raw -> staging -> mart`.
+The project follows the standard `raw -> staging -> mart` pattern.
 
-- `raw` - слой сырой загрузки
-- `staging` - слой очистки и нормализации
-- `mart` - слой готовых метрик для анализа и BI
+- `raw` - raw ingestion layer
+- `staging` - cleansing and normalization layer
+- `mart` - analysis-ready metrics layer for analytics and BI
 
-Поток данных:
+Data flow:
 
 ```text
 MOEX API
@@ -54,210 +54,210 @@ MOEX API
   -> SQL analysis / Power BI dashboard
 ```
 
-Назначение таблиц:
+Table purpose:
 
-- `raw_bars_daily` хранит исходные дневные OHLCV-данные
-- `stg_instruments` хранит справочник инструментов
-- `stg_bars_daily` хранит котировки с привязкой к `instrument_id`
-- `mart_market_data` хранит рыночные данные и `prev_close`
-- `mart_market_metrics` хранит рассчитанные аналитические показатели
+- `raw_bars_daily` stores source daily OHLCV data
+- `stg_instruments` stores the instrument reference list
+- `stg_bars_daily` stores quotes linked to `instrument_id`
+- `mart_market_data` stores market data and `prev_close`
+- `mart_market_metrics` stores calculated analytical indicators
 
-## Метрики в `mart_market_metrics`
+## Metrics in `mart_market_metrics`
 
-В витрине считаются:
+The mart calculates:
 
-- `return` - дневная доходность
-- `log_return` - логарифмическая доходность `ln(close / prev_close)`
-- `volatility_20`, `volatility_50` - скользящая волатильность по дневной доходности за 20 и 50 дней
-- `cumulative_return` - накопленная доходность от первой цены инструмента
-- `ma_20`, `ma_50` - скользящие средние цены закрытия
-- `avg_volume_20` - средний объём за 20 дней
-- `volume_ratio_20` - отношение текущего объёма к среднему объёму за 20 дней
-- `rolling_max_close` - накопительный максимум цены закрытия
-- `drawdown` - просадка относительно исторического максимума
+- `return` - daily return
+- `log_return` - logarithmic return `ln(close / prev_close)`
+- `volatility_20`, `volatility_50` - rolling volatility of daily returns over 20 and 50 days
+- `cumulative_return` - cumulative return since the instrument's first price
+- `ma_20`, `ma_50` - moving averages of closing prices
+- `avg_volume_20` - average volume over 20 days
+- `volume_ratio_20` - ratio of current volume to average 20-day volume
+- `rolling_max_close` - cumulative maximum closing price
+- `drawdown` - drawdown relative to the historical maximum
 
-## Используемые технологии
+## Technologies Used
 
-- `Python 3` - загрузка данных
-- `PowerShell` - запуск полного пайплайна
-- `SQLite` - локальное хранилище данных
-- `sqlite3.exe` - выполнение SQL-скриптов из командной строки
-- `SQL` - построение слоёв и аналитических запросов
-- `aiohttp` - HTTP-клиент для асинхронной загрузки данных
-- `aiomoex` - получение рыночных данных с MOEX
-- `pandas` - подготовка данных перед записью в SQLite
-- `Power BI Desktop` - визуализация итоговых витрин
+- `Python 3` - data loading
+- `PowerShell` - full pipeline execution
+- `SQLite` - local data storage
+- `sqlite3.exe` - command-line SQL script execution
+- `SQL` - data layer construction and analytics queries
+- `aiohttp` - HTTP client for asynchronous data loading
+- `aiomoex` - MOEX market data access
+- `pandas` - data preparation before writing to SQLite
+- `Power BI Desktop` - visualization of the final marts
 
-## Требования
+## Requirements
 
 - Windows PowerShell
 - Python 3
-- SQLite CLI (`sqlite3.exe` уже лежит в проекте)
-- Python-пакеты:
+- SQLite CLI (`sqlite3.exe` is already included in the project)
+- Python packages:
 
 ```powershell
 py -3 -m pip install aiohttp aiomoex pandas
 ```
 
-Если `py` не работает, можно использовать:
+If `py` does not work, you can use:
 
 ```powershell
 python -m pip install aiohttp aiomoex pandas
 ```
 
-## Анализ требований
+## Requirements Analysis
 
-Что проект должен уметь:
+What the project should support:
 
-- загружать дневные данные по одному или нескольким тикерам MOEX
-- хранить данные в локальной SQLite-базе
-- разделять данные на raw, staging и mart-слои
-- считать рыночные метрики для анализа
-- позволять пересчитывать витрины
-- подключаться к Power BI без дополнительного сервера
+- loading daily data for one or more MOEX tickers
+- storing data in a local SQLite database
+- separating data into raw, staging, and mart layers
+- calculating market metrics for analysis
+- allowing marts to be recalculated
+- connecting to Power BI without an additional server
 
-Технические требования к решению:
+Technical requirements covered by the solution:
 
-- простой локальный запуск
-- понятная структура SQL-файлов
-- возможность полной пересборки проекта
-- пригодность для ручной проверки данных
-- совместимость с PowerShell, SQLite и Power BI Desktop
+- simple local execution
+- clear SQL file structure
+- full project rebuild capability
+- suitability for manual data validation
+- compatibility with PowerShell, SQLite, and Power BI Desktop
 
-Как это закрыто в проекте:
+How the project addresses these requirements:
 
-- полная пересборка через [`run_all.ps1`](run_all.ps1)
-- отдельные SQL-файлы по слоям и этапам обработки
-- Python-загрузчик с параметрами по базе, тикерам и датам
-- витрина `mart_market_metrics` с ключевыми ценовыми, объёмными и риск-метриками
-- набор аналитических SQL-запросов в [`analysis.sql`](analysis.sql)
+- full rebuild via [`run_all.ps1`](run_all.ps1)
+- separate SQL files for layers and processing stages
+- Python loader with parameters for database, tickers, and dates
+- `mart_market_metrics` mart with key price, volume, and risk metrics
+- a set of analytical SQL queries in [`analysis.sql`](analysis.sql)
 
-## Быстрый запуск
+## Quick Start
 
-Полная сборка проекта одной командой:
+Full project build with one command:
 
 ```powershell
 .\run_all.ps1
 ```
 
-По умолчанию скрипт:
+By default, the script:
 
-- создаёт новую или пересоздаёт существующую `moex_stock.db`
-- удаляет старые таблицы через `drop_all.sql`
-- выполняет `schema.sql`
-- загружает данные MOEX по тикеру `GAZP` с `2010-01-01`
-- заполняет staging и mart
+- creates a new `moex_stock.db` database or recreates the existing one
+- removes old tables with `drop_all.sql`
+- executes `schema.sql`
+- loads MOEX data for ticker `GAZP` starting from `2010-01-01`
+- populates staging and mart
 
-Запуск с параметрами:
+Run with parameters:
 
 ```powershell
 .\run_all.ps1 -Database moex_stock.db -Tickers "GAZP,SBER,LKOH" -Start "2015-01-01" -End "2026-03-16"
 ```
 
-Если PowerShell блокирует запуск скриптов:
+If PowerShell blocks script execution:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_all.ps1 -Tickers "GAZP,SBER"
 ```
 
-## Важно
+## Important
 
-`run_all.ps1` делает полную пересборку и начинает с [`drop_all.sql`](drop_all.sql). Если в базе были нужные данные, они будут удалены.
+`run_all.ps1` performs a full rebuild and starts with [`drop_all.sql`](drop_all.sql). If the database contains data you need, it will be deleted.
 
-Если задача не в полной пересборке, а только в добавлении новых тикеров в уже существующую базу, `run_all.ps1` использовать не нужно.
+If your goal is not a full rebuild but only adding new tickers to an existing database, you should not use `run_all.ps1`.
 
-Для добавления новых тикеров лучше такой порядок:
+To add new tickers, this order is recommended:
 
-1. Запустить [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py) с нужными тикерами
-2. Выполнить [`staging.sql`](staging.sql)
-3. Выполнить [`mart.sql`](mart.sql)
+1. Run [`load_moex_to_sqlite.py`](load_moex_to_sqlite.py) with the required tickers
+2. Execute [`staging.sql`](staging.sql)
+3. Execute [`mart.sql`](mart.sql)
 
-## Ручной запуск по шагам
+## Manual Step-by-Step Run
 
-1. Создать таблицы:
+1. Create tables:
 
 ```powershell
 .\sqlite3.exe moex_stock.db ".read schema.sql"
 ```
 
-2. Загрузить raw-данные:
+2. Load raw data:
 
 ```powershell
 py -3 .\load_moex_to_sqlite.py --db moex_stock.db --tickers "GAZP,SBER" --start "2015-01-01" --end "2026-03-16"
 ```
 
-3. Построить staging:
+3. Build staging:
 
 ```powershell
 .\sqlite3.exe moex_stock.db ".read staging.sql"
 ```
 
-4. Построить mart:
+4. Build mart:
 
 ```powershell
 .\sqlite3.exe moex_stock.db ".read mart.sql"
 ```
 
-5. Выполнить анализ:
+5. Run analysis:
 
 ```powershell
 .\sqlite3.exe moex_stock.db ".read analysis.sql"
 ```
 
-## Параметры `load_moex_to_sqlite.py`
+## `load_moex_to_sqlite.py` Parameters
 
-При запуске Python-скрипта можно задавать параметры вручную:
+When running the Python script, you can set parameters manually:
 
-- `--db` - имя или путь к базе данных
-- `--tickers` - тикеры через запятую, например `GAZP,SBER,LKOH`
-- `--start` - дата начала загрузки в формате `YYYY-MM-DD`
-- `--end` - дата конца загрузки в формате `YYYY-MM-DD`
+- `--db` - database name or path
+- `--tickers` - comma-separated tickers, for example `GAZP,SBER,LKOH`
+- `--start` - load start date in `YYYY-MM-DD` format
+- `--end` - load end date in `YYYY-MM-DD` format
 
-Если `--end` не указан, скрипт берёт текущую дату.
+If `--end` is not specified, the script uses the current date.
 
-Пример:
+Example:
 
 ```powershell
 py -3 .\load_moex_to_sqlite.py --db my_stock.db --tickers "GAZP,MGNT,SBER" --start "2020-01-01" --end "2026-03-16"
 ```
 
-Если нужно просто добавить новые тикеры в уже существующую базу, после загрузки raw-данных нужно заново выполнить:
+If you only need to add new tickers to an existing database, rerun the following after loading raw data:
 
 ```powershell
 .\sqlite3.exe moex_stock.db ".read staging.sql"
 .\sqlite3.exe moex_stock.db ".read mart.sql"
 ```
 
-## Проверки и анализ
+## Checks and Analysis
 
-- [`raw.sql`](raw.sql) проверяет дубли, пропуски и базовые аномалии в raw
-- [`staging.sql`](staging.sql) загружает staging и содержит валидационные запросы
-- [`mart.sql`](mart.sql) пересчитывает витрины
-- [`analysis.sql`](analysis.sql) содержит готовые выборки по доходности, волатильности, просадкам и экстремальным движениям
+- [`raw.sql`](raw.sql) checks duplicates, gaps, and basic anomalies in raw data
+- [`staging.sql`](staging.sql) loads staging and includes validation queries
+- [`mart.sql`](mart.sql) recalculates marts
+- [`analysis.sql`](analysis.sql) contains ready-to-use queries for returns, volatility, drawdowns, and extreme moves
 
-## Дашборд Power BI
+## Power BI Dashboard
 
-Файл [`BI_stock.pbix`](BI_stock.pbix) использует SQLite-базу проекта как источник данных.
+The [`BI_stock.pbix`](BI_stock.pbix) file uses the project's SQLite database as its data source.
 
-В дашборде можно смотреть:
+The dashboard can be used to view:
 
-- динамику цены закрытия по датам
-- дневную доходность `return`
-- накопленную доходность `cumulative_return`
-- волатильность `volatility_20` и `volatility_50`
-- просадку `drawdown`
-- всплески объёма через `volume_ratio_20`
+- closing price trend by date
+- daily `return`
+- cumulative `cumulative_return`
+- `volatility_20` and `volatility_50`
+- `drawdown`
+- volume spikes using `volume_ratio_20`
 
-После обновления базы:
+After updating the database:
 
-1. Открой `BI_stock.pbix`
-2. Нажми `Refresh`
-3. Проверь, что Power BI подключён к актуальному файлу `moex_stock.db`
+1. Open `BI_stock.pbix`
+2. Click `Refresh`
+3. Make sure Power BI is connected to the current `moex_stock.db` file
 
-## Результат
+## Result
 
-В результате проект даёт локальную SQLite-базу с витринами для:
+The project produces a local SQLite database with marts for:
 
-- SQL-анализа
-- визуализаций в Power BI
-- оценки доходности, волатильности, объёмов и просадок по тикерам MOEX
+- SQL analysis
+- Power BI visualizations
+- evaluating returns, volatility, volume, and drawdowns for MOEX tickers
